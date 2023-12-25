@@ -1,12 +1,16 @@
 "use client";
 
 import { Fragment } from "react";
+import { format } from 'date-fns'
 import { Member, Message, Profile } from "@prisma/client";
 import { Loader2, ServerCrash } from "lucide-react";
 
 import { useChatQuery } from "@/hooks/use-chat-query";
 
 import { ChatWelcome } from "./chat-welcome";
+import { ChatItem } from "./chat-item";
+
+const DATE_FORMAT = "d MMM yyyy, HH:mm"
 
 type MessageWithMemberWithProfile = Message & {
   member: Member & {
@@ -15,28 +19,28 @@ type MessageWithMemberWithProfile = Message & {
 }
 
 interface ChatMessagesProps {
-    name: string;
-    member: Member;
-    chatId: string;
-    apiUrl: string;
-    socketUrl: string;
-    socketQuery: Record<string, string>;
-    paramKey: "conversationId" | "channelId";
-    paramValue: string;
-    type: "conversation" | "channel";
+  name: string;
+  member: Member;
+  chatId: string;
+  apiUrl: string;
+  socketUrl: string;
+  socketQuery: Record<string, string>;
+  paramKey: "conversationId" | "channelId";
+  paramValue: string;
+  type: "conversation" | "channel";
 }
 
 export const ChatMessages = ({
-    name,
-    member,
-    chatId,
-    apiUrl,
-    socketUrl,
-    socketQuery,
-    paramKey,
-    paramValue,
-    type,
-} : ChatMessagesProps) => {
+  name,
+  member,
+  chatId,
+  apiUrl,
+  socketUrl,
+  socketQuery,
+  paramKey,
+  paramValue,
+  type,
+}: ChatMessagesProps) => {
 
   const queryKey = `chat:${chatId}`
 
@@ -72,19 +76,29 @@ export const ChatMessages = ({
 
   return (
     <div className="flex-1 flex flex-col py-4 overflow-y-auto">
-        <div className="flex-1" />
-        <ChatWelcome type={type} name={name} />
-        <div className="flex flex-col-reverse mt-auto">
-          {data?.pages.map((group, i) => (
-            <Fragment key={i}>
-                {group.items.map((message: MessageWithMemberWithProfile) => (
-                  <div key={message.id}>
-                    {message.content}
-                  </div>
-                ))}
-            </Fragment>
-          ))}
-        </div>
+      <div className="flex-1" />
+      <ChatWelcome type={type} name={name} />
+      <div className="flex flex-col-reverse mt-auto">
+        {data?.pages.map((group, i) => (
+          <Fragment key={i}>
+            {group.items.map((message: MessageWithMemberWithProfile) => (
+              <ChatItem
+                currentMember={member}
+                key={message.id}
+                id={message.id}
+                content={message.content}
+                fileUrl={message.fileUrl}
+                deleted={message.deleted}
+                timestamp={format(new Date(message.createdAt), DATE_FORMAT)}
+                isUpdated={message.updatedAt !== message.createdAt}
+                socketUrl={socketUrl}
+                socketQuery={socketQuery}
+                member={message.member}
+              />
+            ))}
+          </Fragment>
+        ))}
+      </div>
     </div>
   )
 }
